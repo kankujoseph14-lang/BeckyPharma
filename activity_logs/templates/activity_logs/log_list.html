@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Journal d'Activités - BeckyPharma{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-journal-text text-primary me-2"></i>Journal d'Activités & Audit</h2>
+        
+        <!-- Filtre par Action -->
+        <form method="get" class="d-flex gap-2">
+            <select name="action" class="form-select" onchange="this.form.submit()">
+                <option value="">Tous les types d'actions</option>
+                {% for code, label in action_choices %}
+                    <option value="{{ code }}" {% if selected_action == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0 align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Date & Heure</th>
+                            <th>Utilisateur</th>
+                            <th>Type d'action</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td><small class="fw-bold">{{ log.timestamp|date:"d/m/Y H:i:s" }}</small></td>
+                            <td>
+                                {% if log.user %}
+                                    <i class="bi bi-person-circle me-1"></i>{{ log.user.get_full_name|default:log.user.username }}
+                                {% else %}
+                                    <span class="text-muted">Système</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if 'SALE' in log.action_type %}
+                                    <span class="badge bg-success">{{ log.get_action_type_display }}</span>
+                                {% elif 'PRODUCT' in log.action_type or 'STOCK' in log.action_type %}
+                                    <span class="badge bg-warning text-dark">{{ log.get_action_type_display }}</span>
+                                {% elif 'CASH' in log.action_type %}
+                                    <span class="badge bg-info text-dark">{{ log.get_action_type_display }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ log.get_action_type_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ log.description }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">
+                                Aucune activité enregistrée pour le moment.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

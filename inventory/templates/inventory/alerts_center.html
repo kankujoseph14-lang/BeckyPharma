@@ -1,0 +1,159 @@
+{% extends 'base.html' %} 
+
+{% block title %}Centre d'Alertes Stock - BeckyPharma{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h2 class="mb-1"><i class="bi bi-bell-fill text-danger me-2"></i>Centre de Notifications & Alertes</h2>
+            <span class="badge bg-danger fs-6">{{ total_alerts_count }} Alerte(s) active(s)</span>
+        </div>
+
+        <!-- Actions Administrateur (Export / Import Stock) -->
+        {% if request.user.is_admin_role or request.user.is_superuser or request.user.is_staff %}
+            <div class="d-flex gap-2">
+                <a href="{% url 'inventory:export_stock_csv' %}" class="btn btn-outline-success d-flex align-items-center gap-1">
+                    <i class="bi bi-file-earmark-excel"></i> Exporter Stock (CSV)
+                </a>
+                <a href="{% url 'inventory:import_products_csv' %}" class="btn btn-primary d-flex align-items-center gap-1">
+                    <i class="bi bi-upload"></i> Importer Catalogue
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- 1. ALERTES RUPTURE DE STOCK -->
+    <div class="card border-danger mb-4 shadow-sm">
+        <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-x-circle-fill me-2"></i>Ruptures de Stock (Quantité = 0)</h5>
+            <span class="badge bg-light text-danger fw-bold">{{ alerts_out_of_stock|length }}</span>
+        </div>
+        <div class="card-body p-0">
+            {% if alerts_out_of_stock %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Produit</th>
+                                <th>Catégorie</th>
+                                <th>Prix Vente</th>
+                                <th>Statut</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in alerts_out_of_stock %}
+                            <tr>
+                                <td><strong>{{ product.name }}</strong></td>
+                                <td>{{ product.category.name|default:"-" }}</td>
+                                <td>{{ product.selling_price }} $</td>
+                                <td><span class="badge bg-danger">Rupture totale</span></td>
+                                <td class="text-center">
+                                    <a href="{% url 'inventory:product_edit' product.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-plus-circle me-1"></i>Réapprovisionner
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="p-3 text-success"><i class="bi bi-check-circle me-1"></i>Aucune rupture de stock signalée.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 2. ALERTES STOCK FAIBLE -->
+    <div class="card border-warning mb-4 shadow-sm">
+        <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>Stocks Faibles (≤ Seuil d'Alerte)</h5>
+            <span class="badge bg-dark fw-bold">{{ alerts_low_stock|length }}</span>
+        </div>
+        <div class="card-body p-0">
+            {% if alerts_low_stock %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Produit</th>
+                                <th>Stock Restant</th>
+                                <th>Seuil d'Alerte</th>
+                                <th>Prix Vente</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in alerts_low_stock %}
+                            <tr>
+                                <td><strong>{{ product.name }}</strong></td>
+                                <td><span class="badge bg-warning text-dark fs-6">{{ product.stock_quantity }}</span></td>
+                                <td><span class="text-muted">{{ product.alert_threshold }}</span></td>
+                                <td>{{ product.selling_price }} $</td>
+                                <td class="text-center">
+                                    <a href="{% url 'inventory:product_edit' product.id %}" class="btn btn-sm btn-outline-warning text-dark">
+                                        <i class="bi bi-pencil me-1"></i>Ajuster Stock
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="p-3 text-success"><i class="bi bi-check-circle me-1"></i>Tous les stocks sont à des niveaux suffisants.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 3. ALERTES PÉREMPTION IMMINENTE OU DÉPASSÉE -->
+    <div class="card border-info mb-4 shadow-sm">
+        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-calendar-event-fill me-2"></i>Péremption Proche ou Dépassée (≤ 30 jours)</h5>
+            <span class="badge bg-light text-info fw-bold">{{ alerts_expiring|length }}</span>
+        </div>
+        <div class="card-body p-0">
+            {% if alerts_expiring %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Produit</th>
+                                <th>Date d'expiration</th>
+                                <th>Stock en Réserve</th>
+                                <th>Statut</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in alerts_expiring %}
+                            <tr>
+                                <td><strong>{{ product.name }}</strong></td>
+                                <td>{{ product.expiration_date|date:"d/m/Y" }}</td>
+                                <td>{{ product.stock_quantity }}</td>
+                                <td>
+                                    {% if product.expiration_date <= today %}
+                                        <span class="badge bg-danger">Périmé</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">Expire bientôt</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <a href="{% url 'inventory:product_edit' product.id %}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-pencil"></i> Modifier
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="p-3 text-success"><i class="bi bi-check-circle me-1"></i>Aucun médicament proche de la date d'expiration.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+

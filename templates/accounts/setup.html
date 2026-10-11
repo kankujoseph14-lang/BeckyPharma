@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 85vh;">
+    <div class="card shadow-lg p-4" style="width: 100%; max-width: 500px; border-radius: 12px;">
+        <div class="text-center mb-4">
+            <h3 class="fw-bold text-primary">BECKYPHARMA</h3>
+            <span class="badge bg-warning text-dark mb-2">Première Configuration</span>
+            <p class="text-muted small">Création du compte Administrateur Principal</p>
+        </div>
+
+        {% if form.errors %}
+            <div class="alert alert-danger py-2 small" role="alert">
+                Veuillez corriger les erreurs dans le formulaire ci-dessous.
+            </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="mb-3">
+                <label for="id_username" class="form-label fw-semibold">Nom d'utilisateur Admin</label>
+                {{ form.username }}
+                {% if form.username.errors %}<div class="text-danger small">{{ form.username.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="id_first_name" class="form-label fw-semibold">Prénom</label>
+                    {{ form.first_name }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="id_last_name" class="form-label fw-semibold">Nom</label>
+                    {{ form.last_name }}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="id_email" class="form-label fw-semibold">Adresse email</label>
+                {{ form.email }}
+                {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label for="id_password" class="form-label fw-semibold">Mot de passe</label>
+                {{ form.password }}
+                {% if form.password.errors %}<div class="text-danger small">{{ form.password.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label for="id_confirm_password" class="form-label fw-semibold">Confirmer le mot de passe</label>
+                {{ form.confirm_password }}
+                {% if form.confirm_password.errors %}<div class="text-danger small">{{ form.confirm_password.errors.0 }}</div>{% endif %}
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 py-2 mt-2 fw-bold">Initialiser l'application</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

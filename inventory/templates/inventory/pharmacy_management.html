@@ -1,0 +1,238 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold m-0">📦 Administration du Stock & Médicaments</h2>
+        <div>
+            <a href="{% url 'inventory:export_stock_csv' %}" class="btn btn-outline-secondary btn-sm me-2">📥 Exporter CSV</a>
+            <a href="{% url 'inventory:import_products_csv' %}" class="btn btn-outline-primary btn-sm">📤 Importer CSV</a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Carte des Métriques Financières Globales -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 border-start border-primary border-4 bg-light">
+                <div class="card-body">
+                    <span class="text-muted fw-semibold small text-uppercase">Valeur Totale du Stock (Prix Achat)</span>
+                    <h3 class="fw-bold text-primary mb-0 mt-1">${{ total_stock_value|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 border-start border-success border-4 bg-light">
+                <div class="card-body">
+                    <span class="text-muted fw-semibold small text-uppercase">Bénéfice Potentiel Total</span>
+                    <h3 class="fw-bold text-success mb-0 mt-1">${{ total_potential_profit|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section Formulaire + Tableau -->
+    <div class="row g-4">
+        <!-- Formulaire d'ajout de Produit -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white fw-bold">
+                    ➕ Ajouter un Médicament
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'inventory:product_list_create' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Nom du produit</label>
+                            {{ form.name }}
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label fw-semibold">Prix Achat ($)</label>
+                                {{ form.purchase_price }}
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-semibold">Prix Vente ($)</label>
+                                {{ form.selling_price }}
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label fw-semibold">Stock Initial</label>
+                                {{ form.stock_quantity }}
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-semibold">Seuil Alerte</label>
+                                {{ form.alert_threshold }}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Date de Péremption</label>
+                            {{ form.expiration_date }}
+                        </div>
+                        {% if form.pharmacy %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Pharmacie</label>
+                            {{ form.pharmacy }}
+                        </div>
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary w-100">Enregistrer dans le Stock</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Catalogue / Liste du Stock -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light fw-bold d-flex justify-content-between align-items-center">
+                    <span>📋 Catalogue Produits ({{ products|length }})</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Produit</th>
+                                <th>Stock</th>
+                                <th>P. Achat</th>
+                                <th>P. Vente</th>
+                                <th>Marge Unitaire</th>
+                                <th>Péremption</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in products %}
+                                <tr>
+                                    <td class="fw-bold">
+                                        {{ product.name }}
+                                        {% if product.pharmacy %}
+                                            <br><small class="text-muted fw-normal">{{ product.pharmacy.name }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if product.stock_quantity == 0 %}
+                                            <span class="badge bg-danger">0 (Rupture)</span>
+                                        {% elif product.stock_quantity <= product.alert_threshold %}
+                                            <span class="badge bg-warning text-dark">{{ product.stock_quantity }} (Stock Bas)</span>
+                                        {% else %}
+                                            <span class="badge bg-success">{{ product.stock_quantity }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>${{ product.purchase_price }}</td>
+                                    <td class="fw-bold">${{ product.selling_price }}</td>
+                                    <td>
+                                        <span class="text-success fw-semibold">+${{ product.unit_margin }}</span>
+                                    </td>
+                                    <td>
+                                        {% if product.expiration_date %}
+                                            {% if product.is_expired %}
+                                                <span class="badge bg-danger">{{ product.expiration_date|date:"d/m/Y" }} (Périmé)</span>
+                                            {% else %}
+                                                <small>{{ product.expiration_date|date:"d/m/Y" }}</small>
+                                            {% endif %}
+                                        {% else %}
+                                            <small class="text-muted">N/A</small>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-outline-warning me-1" data-bs-toggle="modal" data-bs-target="#editProductModal{{ product.id }}">✏️</button>
+                                        <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteProductModal{{ product.id }}">🗑️</button>
+                                    </td>
+                                </tr>
+
+                                <!-- Modal Modification Produit -->
+                                <div class="modal fade" id="editProductModal{{ product.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header bg-warning text-dark">
+                                                <h5 class="modal-title fw-bold">Modifier {{ product.name }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <form method="post" action="{% url 'inventory:edit_product' product.id %}">
+                                                {% csrf_token %}
+                                                <div class="modal-body text-start">
+                                                    <div class="mb-3">
+                                                        <label class="form-label fw-semibold">Nom du médicament</label>
+                                                        <input type="text" name="name" class="form-control" value="{{ product.name }}" required>
+                                                    </div>
+                                                    <div class="row g-2 mb-3">
+                                                        <div class="col-6">
+                                                            <label class="form-label fw-semibold">Prix Achat ($)</label>
+                                                            <input type="number" step="0.01" name="purchase_price" class="form-control" value="{{ product.purchase_price }}" required>
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <label class="form-label fw-semibold">Prix Vente ($)</label>
+                                                            <input type="number" step="0.01" name="selling_price" class="form-control" value="{{ product.selling_price }}" required>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row g-2 mb-3">
+                                                        <div class="col-6">
+                                                            <label class="form-label fw-semibold">Quantité en Stock</label>
+                                                            <input type="number" name="stock_quantity" class="form-control" value="{{ product.stock_quantity }}" required>
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <label class="form-label fw-semibold">Seuil Alerte</label>
+                                                            <input type="number" name="alert_threshold" class="form-control" value="{{ product.alert_threshold }}">
+                                                        </div>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label fw-semibold">Date de Péremption</label>
+                                                        <input type="date" name="expiration_date" class="form-control" value="{{ product.expiration_date|date:'Y-m-d' }}">
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                    <button type="submit" class="btn btn-warning">Enregistrer les modifications</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Modal Suppression Produit -->
+                                <div class="modal fade" id="deleteProductModal{{ product.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header bg-danger text-white">
+                                                <h5 class="modal-title fw-bold">Confirmer la suppression</h5>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body text-start">
+                                                Êtes-vous sûr de vouloir supprimer le produit <strong>{{ product.name }}</strong> du stock ?
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                <form method="post" action="{% url 'inventory:delete_product' product.id %}">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-danger">Supprimer</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">
+                                        Aucun produit enregistré dans le stock pour le moment.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

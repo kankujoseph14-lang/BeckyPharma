@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BECKYPHARMA - Importer Produits (CSV)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="card-title mb-0 fw-bold">📥 Importer des produits depuis un fichier CSV</h5>
+                </div>
+                <div class="card-body p-4">
+
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <!-- Information sur le format du fichier -->
+                    <div class="alert alert-info border-0 bg-info-subtle text-info-emphasis mb-4">
+                        <h6 class="fw-bold mb-2">📌 Format du fichier CSV attendu :</h6>
+                        <small class="d-block mb-1">Les colonnes doivent être séparées par un point-virgule (<code>;</code>) ou une virgule (<code>,</code>) :</small>
+                        <code class="d-block p-2 bg-white rounded border">
+                            Nom;PrixAchat;PrixVente;Stock;SeuilAlerte;[DatePeremption]
+                        </code>
+                        <small class="text-muted d-block mt-2">
+                            <em>Exemple : Paracétamol 500mg;1.5;2.5;100;10;31/12/2026</em>
+                        </small>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label for="csv_file" class="form-label fw-bold">Sélectionnez le fichier CSV :</label>
+                            <input type="file" class="form-control" id="csv_file" name="csv_file" accept=".csv" required>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success py-2 fw-semibold">Lancer l'importation</button>
+                            <a href="{% url 'inventory:alerts_center' %}" class="btn btn-outline-secondary py-2">Annuler</a>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

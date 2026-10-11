@@ -1,0 +1,275 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container my-4">
+    <h2 class="fw-bold mb-4">Administration — Pharmacies & Agents</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row g-4 mb-5">
+        <!-- Formulaire de Création de Pharmacie -->
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-primary text-white fw-bold">
+                    ➕ Ajouter une Pharmacie / Boutique
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'pharmacies:pharmacy_list_create' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Nom de la boutique</label>
+                            {{ form.name }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Adresse</label>
+                            {{ form.address }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Téléphone</label>
+                            {{ form.phone }}
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Créer la Pharmacie</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulaire de Création d'Agent -->
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-success text-white fw-bold">
+                    👤 Créer un Agent / Vendeur
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'pharmacies:create_agent' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Nom d'utilisateur</label>
+                            {{ agent_form.username }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Adresse Email (optionnel)</label>
+                            {{ agent_form.email }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Pharmacie d'affectation</label>
+                            {{ agent_form.pharmacy }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Mot de passe</label>
+                            {{ agent_form.password }}
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Créer l'Agent</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Listings des pharmacies et agents -->
+    <div class="row g-4">
+        <!-- Section Pharmacies -->
+        <div class="col-md-6">
+            <h4 class="fw-bold mb-3">Boutiques enregistrées</h4>
+            <div class="table-responsive">
+                <table class="table table-striped border align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nom</th>
+                            <th>Adresse</th>
+                            <th>Téléphone</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pharm in pharmacies %}
+                            <tr>
+                                <td class="fw-semibold">{{ pharm.name }}</td>
+                                <td>{{ pharm.address|default:"—" }}</td>
+                                <td>{{ pharm.phone|default:"—" }}</td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-warning me-1" data-bs-toggle="modal" data-bs-target="#editPharmModal{{ pharm.id }}">✏️</button>
+                                    <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deletePharmModal{{ pharm.id }}">🗑️</button>
+                                </td>
+                            </tr>
+
+                            <!-- Modal Édit Pharmacie -->
+                            <div class="modal fade" id="editPharmModal{{ pharm.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title fw-bold">Modifier {{ pharm.name }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="post" action="{% url 'pharmacies:edit_pharmacy' pharm.id %}">
+                                            {% csrf_token %}
+                                            <div class="modal-body">
+                                                <div class="mb-3 text-start">
+                                                    <label class="form-label fw-semibold">Nom de la boutique</label>
+                                                    <input type="text" name="name" class="form-control" value="{{ pharm.name }}" required>
+                                                </div>
+                                                <div class="mb-3 text-start">
+                                                    <label class="form-label fw-semibold">Adresse</label>
+                                                    <input type="text" name="address" class="form-control" value="{{ pharm.address|default:'' }}">
+                                                </div>
+                                                <div class="mb-3 text-start">
+                                                    <label class="form-label fw-semibold">Téléphone</label>
+                                                    <input type="text" name="phone" class="form-control" value="{{ pharm.phone|default:'' }}">
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                <button type="submit" class="btn btn-primary">Enregistrer</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Modal Supprimer Pharmacie -->
+                            <div class="modal fade" id="deletePharmModal{{ pharm.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title fw-bold">Confirmer la suppression</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body text-start">
+                                            Voulez-vous vraiment supprimer la pharmacie <strong>{{ pharm.name }}</strong> ? Cette action est irrémédiable.
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                            <form method="post" action="{% url 'pharmacies:delete_pharmacy' pharm.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-danger">Supprimer</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">Aucune pharmacie enregistrée pour le moment.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section Agents -->
+        <div class="col-md-6">
+            <h4 class="fw-bold mb-3">Agents & Vendeurs</h4>
+            <div class="table-responsive">
+                <table class="table table-striped border align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Identifiant</th>
+                            <th>Pharmacie affectée</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for agent in agents %}
+                            <tr>
+                                <td class="fw-semibold">{{ agent.username }}</td>
+                                <td>
+                                    {% if agent.pharmacy %}
+                                        <span class="badge bg-info text-dark">{{ agent.pharmacy.name }}</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">Non affecté</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-warning me-1" data-bs-toggle="modal" data-bs-target="#editAgentModal{{ agent.id }}">✏️</button>
+                                    <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteAgentModal{{ agent.id }}">🗑️</button>
+                                </td>
+                            </tr>
+
+                            <!-- Modal Édit / Réaffectation Agent -->
+                            <div class="modal fade" id="editAgentModal{{ agent.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title fw-bold">Modifier l'agent {{ agent.username }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="post" action="{% url 'pharmacies:edit_agent' agent.id %}">
+                                            {% csrf_token %}
+                                            <div class="modal-body text-start">
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-semibold">Nom d'utilisateur</label>
+                                                    <input type="text" name="username" class="form-control" value="{{ agent.username }}" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-semibold">Adresse Email</label>
+                                                    <input type="email" name="email" class="form-control" value="{{ agent.email|default:'' }}">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-semibold">Pharmacie d'affectation</label>
+                                                    <select name="pharmacy" class="form-select">
+                                                        <option value="">-- Non affecté --</option>
+                                                        {% for pharm in pharmacies %}
+                                                            <option value="{{ pharm.id }}" {% if agent.pharmacy and agent.pharmacy.id == pharm.id %}selected{% endif %}>
+                                                                {{ pharm.name }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-semibold">Nouveau mot de passe (optionnel)</label>
+                                                    <input type="password" name="new_password" class="form-control" placeholder="Laissez vide pour conserver le mot de passe actuel">
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                <button type="submit" class="btn btn-primary">Mettre à jour</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Modal Supprimer Agent -->
+                            <div class="modal fade" id="deleteAgentModal{{ agent.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title fw-bold">Confirmer la suppression</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body text-start">
+                                            Voulez-vous vraiment supprimer le compte de l'agent <strong>{{ agent.username }}</strong> ?
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                            <form method="post" action="{% url 'pharmacies:delete_agent' agent.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-danger">Supprimer</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center text-muted">Aucun agent créé pour le moment.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

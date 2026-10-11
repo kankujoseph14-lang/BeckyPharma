@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historique des Ventes - BECKYPHARMA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body class="bg-light">
+
+    <!-- Barre de Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-4">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="{% url 'sales:pos_terminal' %}">💊 BECKYPHARMA - Historique</a>
+            <div class="d-flex align-items-center gap-3">
+                <a href="{% url 'sales:pos_terminal' %}" class="btn btn-outline-light btn-sm">🛒 Caisse POS</a>
+                <span class="text-white fw-bold">👤 {{ request.user.username }}</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Entête et Filtres -->
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+            <div>
+                <h2 class="fw-bold text-dark m-0">📋 Journal des Ventes</h2>
+                <small class="text-muted">
+                    {% if selected_date %}
+                        Ventes du {{ selected_date|date:"d/m/Y" }}
+                    {% else %}
+                        Toutes les ventes enregistrées
+                    {% endif %}
+                </small>
+            </div>
+
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <!-- Filtre par Date -->
+                <form method="GET" class="d-flex gap-2">
+                    <input type="date" name="date" class="form-control" value="{{ selected_date }}">
+                    <button type="submit" class="btn btn-primary">Filtrer</button>
+                    {% if selected_date %}
+                        <a href="{% url 'sales:sales_history' %}" class="btn btn-outline-secondary">Réinitialiser</a>
+                    {% endif %}
+                </form>
+
+                <!-- Bouton Export CSV (Administrateurs & Admins de pharmacie) -->
+                {% if request.user.is_admin_role or request.user.is_superuser or request.user.is_staff %}
+                    <a href="{% url 'sales:export_sales_csv' %}{% if selected_date %}?date={{ selected_date }}{% endif %}" class="btn btn-success d-flex align-items-center gap-1">
+                        <i class="bi bi-file-earmark-excel"></i> Exporter CSV
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Cartes Statistiques / Total du Filtre -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6 col-lg-4">
+                <div class="card border-0 shadow-sm bg-white p-3">
+                    <div class="text-muted small">Nombre de Ventes</div>
+                    <div class="fs-4 fw-bold text-dark">{{ sales|length }}</div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="card border-0 shadow-sm bg-white p-3">
+                    <div class="text-muted small">Chiffre d'Affaires Total</div>
+                    <div class="fs-4 fw-bold text-success">
+                        {% if total_sum %}{{ total_sum|floatformat:2 }}{% else %}0.00{% endif %} $
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tableau des ventes -->
+        <div class="card shadow-sm border-0 mb-5">
+            <div class="card-body p-0">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>N° Vente</th>
+                            <th>Date & Heure</th>
+                            <th>Vendeur</th>
+                            <th>Mode de Règlement</th>
+                            <th class="text-end">Montant Total</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sale in sales %}
+                        <tr>
+                            <td class="fw-bold">#{{ sale.id }}</td>
+                            <td>{{ sale.created_at|date:"d/m/Y H:i" }}</td>
+                            <td><span class="badge bg-info text-dark">{{ sale.seller.username }}</span></td>
+                            <td>
+                                {% if sale.payment_method == 'CASH' %}
+                                    <span class="badge bg-success">Espèces</span>
+                                {% elif sale.payment_method == 'MOBILE_MONEY' %}
+                                    <span class="badge bg-warning text-dark">Mobile Money</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ sale.get_payment_method_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end fw-bold text-success">{{ sale.total_amount }} $</td>
+                            <td class="text-center">
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'sales:sale_detail' sale.id %}" class="btn btn-sm btn-outline-primary" title="Voir le détail">
+                                        👁️ Détail
+                                    </a>
+                                    <a href="{% url 'sales:print_invoice' sale_id=sale.id %}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Imprimer le reçu PDF">
+                                        🖨️ PDF
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                Aucune vente enregistrée pour cette période.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
+

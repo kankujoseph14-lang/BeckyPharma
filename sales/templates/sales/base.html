@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}BECKYPHARMA V1{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-3">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="#">BECKYPHARMA</a>
+
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <!-- Liens accessibles à TOUT LE MONDE (Agent & Admin) -->
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'pos_terminal' %}">💳 Terminal POS</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'sales_history' %}">📜 Historique Ventes</a>
+                </li>
+
+                <!-- Liens masqués aux agents, réservés aux ADMINISTRATEURS (J11) -->
+                {% if request.user.is_admin_role %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'dashboard_analytics' %}">📊 Analytics & Rapports</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/">⚙️ Administration Django</a>
+                </li>
+                {% endif %}
+            </ul>
+
+            <span class="navbar-text text-white">
+                Rôle: <strong>{{ request.user.get_role_display }}</strong> |
+                Agent: <strong>{{ request.user.username }}</strong> |
+                Pharmacie: <strong>{% if request.user.pharmacy %}{{ request.user.pharmacy.name }}{% else %}Globale{% endif %}</strong>
+            </span>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    {% block content %}
+    <!-- Le contenu spécifique de chaque page sera injecté ici -->
+    {% endblock %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>
